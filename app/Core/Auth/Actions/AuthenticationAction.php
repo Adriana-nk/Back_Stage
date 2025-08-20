@@ -134,7 +134,7 @@ final class AuthenticationAction implements IAuthentification
      * @param array $data
      * @return array
      */
-    public static function register(RegisterDto $registerDto): array
+    public function register(RegisterDto $registerDto): array
     {
         try {
             // Vérifier si l'email existe déjà

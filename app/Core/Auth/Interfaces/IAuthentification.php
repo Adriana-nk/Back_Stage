@@ -22,5 +22,5 @@ interface IAuthentification
      * @return array The response containing the outcome of the login operation.
      */
     public function login(LoginDto $loginDto): array;
-    public function register(RegisterDto $registerDto): array;
+    public function  register(RegisterDto $registerDto): array;
 }

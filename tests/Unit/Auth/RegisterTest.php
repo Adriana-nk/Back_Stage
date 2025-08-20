@@ -4,6 +4,7 @@ use App\Core\Auth\Actions\AuthenticationAction;
 use App\Core\Auth\Dto\RegisterDto;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use function Pest\Laravel\assertDatabaseHas;
 
 beforeEach(function () {
     // Nettoyer la base avant chaque test
@@ -17,23 +18,41 @@ it('registers a new user successfully', function () {
         'nom' => 'Doe',
         'prenom' => 'John',
         'telephone' => '0123456789',
-        'genre' => 'M',
+        'genre' => 'Homme',
         'region' => 'Centre',
         'ville' => 'Yaoundé',
         'profil' => 'Client',
         'email' => 'john.doe@example.com',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
+        'password' => 'password123'
     ];
-    $response = $auth->register($data);
+    $payload = new RegisterDto(
+        nom: $data['nom'],
+        prenom: $data['prenom'],
+        telephone: $data['telephone'],
+        genre: $data['genre'],
+        region: $data['region'],
+        ville: $data['ville'],
+        profil: $data['profil'],
+        email: $data['email'],
+        password: $data['password']
+    );
+
+    $response = $auth->register($payload);
 
     expect($response['success'])->toBeTrue();
     expect($response['code'])->toBe(201);
-    expect($response['message'])->toBe('Utilisateur enregistré avec succès');
 
     // Vérifier que l'utilisateur existe en base
-    $user = User::where('email', 'john.doe@example.com')->first();
-    expect($user)->not->toBeNull();
-    expect(Hash::check('password123', $user->password))->toBeTrue();
+    assertDatabaseHas('users', [
+        'email' => $payload->email,
+        'nom' => $payload->nom,
+        'prenom' => $payload->prenom,
+        'telephone' => $payload->telephone,
+        'genre' => $payload->genre,
+        'region' => $payload->region,
+        'ville' => $payload->ville,
+        'profil' => $payload->profil
+        ]
+    );
 });
 

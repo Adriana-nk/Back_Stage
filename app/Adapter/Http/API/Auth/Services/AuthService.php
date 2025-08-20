@@ -54,30 +54,40 @@ final class AuthService
 
     }
     public function register(Request $request): array
-    {
-        // Validation basique des données reçues
-      $validator = Validator::make($request->all(), [
-    'nom' => 'sometimes|string|max:255',
-    'prenom' => 'sometimes|string|max:255',
-    'telephone' => 'sometimes|string|max:20',
-    'genre' => 'sometimes|in:Homme,Femme',
-    'region' => 'sometimes|string|max:255',
-    'ville' => 'sometimes|string|max:255',
-    'profil' => 'sometimes|string|max:255',
-    'email' => 'sometimes|email|unique:users,email',
-    'password' => 'sometimes|string|min:6',
-]);
-
-if ($validator->fails()) {
-    return BaseResponse::unprocess_entity('Some datas are not valid !', $validator->errors()->toArray());
-}
+    {   
+        try {
+            
+            // Validation basique des données reçues
+        $validator = Validator::make($request->all(), [
+            'nom' => 'string|max:255',
+            'prenom' => 'string|max:255',
+            'telephone' => 'string|max:20',
+            'genre' => 'in:Homme,Femme',
+            'region' => 'string|max:255',
+            'ville' => 'string|max:255',
+            'profil' => 'string|max:255',
+            'email' => 'email|unique:users,email',
+            'password' => 'string|min:6',
+        ]);
 
 
+        if ($validator->fails()) {
+            return BaseResponse::unprocess_entity('Some datas are not valid !', $validator->errors()->toArray());
+        }
+
+        
+        
+        
         $payloads = RegisterDto::fromRequest($request);
         // Construction du DTO avec les données validées
-        $registerDto =  AuthenticationAction::register(  $payloads);    ;
+        $auth = new AuthenticationAction();
+        $registerDto = $auth->register($payloads);
 
         // Appel de la méthode d'enregistrement (celle fournie précédemment)
-        return BaseResponse::result($registerDto, 200, 'The user is registered !');
+        return BaseResponse::result($payloads->toArray(), 200, 'The user is registered !');
+        } catch (\Throwable $th) {
+            return BaseResponse::unprocess_entity('An error occurred during validation.', ['error' => $th->getMessage()]);
+        }
+        
     }
 }
