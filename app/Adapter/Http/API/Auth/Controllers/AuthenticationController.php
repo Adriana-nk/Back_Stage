@@ -15,12 +15,7 @@ class AuthenticationController extends Controller
         $this->action = new AuthenticationAction();
     }
 
-    public function register(Request $request)
-    {
-        return response()->json(
-            $this->action->register($request->all())
-        );
-    }
+    
 
     public function login(Request $request)
 {
@@ -55,4 +50,4 @@ class AuthenticationController extends Controller
             )
         );
     }
-}
+} 
