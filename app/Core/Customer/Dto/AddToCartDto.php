@@ -25,11 +25,11 @@ final class AddToCartDto implements IDto
         return [
             'user_id' => $this->user_id,
             'product_id' => $this->product_id,
-            'quantity' => $this->quantity
+            'quantity' => $this->quantity,
         ];
     }
 
-    public static function fromRequest(Request $request): IDto
+    public static function fromRequest(Request $request): self
     {
         return new self([
             'user_id' => $request->input('user_id'),
