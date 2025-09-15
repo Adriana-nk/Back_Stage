@@ -19,20 +19,50 @@ final class FavoritesController extends Controller
     }
 
     /**
-     * Ajouter un produit aux favoris
+     * Ajouter ou retirer un produit des favoris (toggle)
      */
-    public function add(Request $request): JsonResponse
+    public function toggle(Request $request): JsonResponse
     {
-        $res = $this->customerService->addToFavorites($request, true);
+        $user = $request->user();
+        if (!$user) {
+            return response()->json([
+                'code' => 401,
+                'message' => 'Utilisateur non authentifié',
+                'data' => []
+            ], 401);
+        }
+
+        $productId = $request->input('product_id');
+        if (!$productId) {
+            return response()->json([
+                'code' => 400,
+                'message' => 'ID du produit requis',
+                'data' => []
+            ], 400);
+        }
+
+        // On demande au service de faire le toggle
+        $res = $this->customerService->toggleFavorite($user->id, $productId);
+
         return response()->json($res, $res['code'] ?? 200);
     }
 
     /**
-     * Retirer un produit des favoris
+     * Récupérer les favoris
      */
-    public function remove(Request $request): JsonResponse
+    public function get(Request $request): JsonResponse
     {
-        $res = $this->customerService->removeFromFavorites($request, true);
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'code' => 401,
+                'message' => 'Utilisateur non authentifié',
+                'data' => []
+            ], 401);
+        }
+
+        $res = $this->customerService->getFavorites($user->id);
         return response()->json($res, $res['code'] ?? 200);
     }
 }

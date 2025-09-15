@@ -9,32 +9,37 @@ use Illuminate\Http\Request;
 
 final class AddToCartDto implements IDto
 {
-    public int $user_id;
+    public int $user_id;     // 🔥 Ajouté
     public int $product_id;
     public int $quantity;
 
     public function __construct(array $data)
     {
-        $this->user_id = isset($data['user_id']) ? (int) $data['user_id'] : 0;
-        $this->product_id = isset($data['product_id']) ? (int) $data['product_id'] : 0;
-        $this->quantity = isset($data['quantity']) ? (int) $data['quantity'] : 1;
+        $this->user_id    = (int) ($data['user_id'] ?? 0);       // 🔥 Initialisation
+        $this->product_id = (int) ($data['product_id'] ?? 0);
+        $this->quantity   = (int) ($data['quantity'] ?? 1);
     }
 
     public function toArray(): array
     {
         return [
-            'user_id' => $this->user_id,
+            'user_id'    => $this->user_id,
             'product_id' => $this->product_id,
-            'quantity' => $this->quantity,
+            'quantity'   => $this->quantity,
         ];
     }
 
     public static function fromRequest(Request $request): self
     {
         return new self([
-            'user_id' => $request->input('user_id'),
+            'user_id'    => $request->user()?->id ?? 0,          // 🔥 On prend l'utilisateur connecté
             'product_id' => $request->input('product_id'),
-            'quantity' => $request->input('quantity', 1),
+            'quantity'   => $request->input('quantity', 1),
         ]);
+    }
+
+    public static function fromArray(array $data): self
+    {
+        return new self($data);
     }
 }

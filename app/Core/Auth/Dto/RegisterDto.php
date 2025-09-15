@@ -20,15 +20,15 @@ final readonly class RegisterDto implements IDto
     public ?string $password;
 
     public function __construct(
-        ?string $nom,
-        ?string $prenom,
-        ?string $telephone,
-        ?string $genre,
-        ?string $region,
-        ?string $ville,
-        ?string $profil,
-        ?string $email,
-        ?string $password
+        ?string $nom = null,
+        ?string $prenom = null,
+        ?string $telephone = null,
+        ?string $genre = null,
+        ?string $region = null,
+        ?string $ville = null,
+        ?string $profil = null,
+        ?string $email = null,
+        ?string $password = null
     ) {
         $this->nom = $nom;
         $this->prenom = $prenom;
@@ -41,6 +41,7 @@ final readonly class RegisterDto implements IDto
         $this->password = $password;
     }
 
+    // Crée le DTO depuis une requête Laravel
     public static function fromRequest(Request $request): self
     {
         return new self(

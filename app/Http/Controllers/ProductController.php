@@ -55,7 +55,7 @@ class ProductController extends Controller
                 'nom' => $dto->nom,
                 'categorie' => $dto->categorie ?? 'Autre',
                 'description' => $dto->description ?? '',
-                'prix' => $dto->prix ?? 0,
+                'price' => $dto->price ?? 0,
                 'stock' => $dto->stock ?? 0,
                 'favori' => $dto->favori ?? false,
                 'image_url' => $dto->image_url ?? 'assets/img/default.png'
@@ -107,7 +107,7 @@ class ProductController extends Controller
             'nom' => $dto->nom ?? $product->nom,
             'categorie' => $dto->categorie ?? $product->categorie,
             'description' => $dto->description ?? $product->description,
-            'prix' => $dto->prix ?? $product->prix,
+            'price' => $dto->prix ?? $product->prix,
             'stock' => $dto->stock ?? $product->stock,
             'image_url' => $dto->image_url ?? $product->image_url,
             'favori' => $dto->favori ?? $product->favori,
@@ -128,4 +128,5 @@ class ProductController extends Controller
 
         return response()->json(BaseResponse::success("Produit supprimé avec succès"));
     }
+    
 }

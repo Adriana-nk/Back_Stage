@@ -11,15 +11,26 @@ use Illuminate\Http\Request;
 
 final class RegisterController extends Controller
 {
+    private AuthService $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     /**
-     * Handle the incoming request.
+     * Handle the incoming register request.
      *
-     * @param  Request  $request  the inconming request object
+     * @param  Request  $request
+     * @return JsonResponse
      */
     public function __invoke(Request $request): JsonResponse
     {
-        $res = (new AuthService())->register($request);
+        $response = $this->authService->register($request);
 
-        return response()->json($res, $res["code"]);
+        return response()->json(
+            $response,
+            $response['code'] ?? 500 // fallback si code absent
+        );
     }
 }

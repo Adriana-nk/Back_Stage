@@ -1,21 +1,34 @@
 <?php
 
-namespace App\Models;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class Product extends Model
+return new class extends Migration
 {
-    use HasFactory;
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();
+            $table->string('nom');
+            $table->string('categorie');
+            $table->text('description')->nullable();
+            $table->integer('stock')->default(0);
+            $table->decimal('prix', 10, 2); // prix du produit en FCFA
+            $table->string('image_url')->nullable();
+            $table->boolean('favori')->default(false);
+            $table->timestamps();
+        });
+    }
 
-    protected $fillable = [
-        'nom',
-        'categorie',
-        'description',
-        'prix',      // <-- assure-toi que c’est 'prix' et non 'price'
-        'stock',
-        'image_url',
-        'favori'
-    ];
-}
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('products');
+    }
+};

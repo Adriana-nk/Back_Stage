@@ -56,4 +56,21 @@ final class ProductController extends Controller
         $res = ProductService::deleteProduct($id);
         return response()->json($res, $res['code']);
     }
+      /**
+     * Récupérer tous les produits favoris de l'utilisateur connecté
+     */
+    public function getFavorites(): JsonResponse
+    {
+        $res = ProductService::getUserFavoritedProducts();
+        return response()->json($res, $res['code']);
+    }
+
+    /**
+     * Ajouter ou retirer un produit des favoris
+     */
+    public function toggleFavorite(Request $request): JsonResponse
+    {
+        $res = ProductService::toggleFavorite($request);
+        return response()->json($res, $res['code']);
+    }
 }

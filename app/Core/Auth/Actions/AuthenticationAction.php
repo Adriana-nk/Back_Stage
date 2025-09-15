@@ -12,15 +12,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Password;
 
 final class AuthenticationAction implements IAuthentification
 {
-    /**
-     * Valide le compte utilisateur avec un code reçu par email
-     * @param string $email
-     * @param string $validation_code
-     * @return array
-     */
     public function validateAccount(string $email, string $validation_code): array
     {
         $user = User::where('email', $email)->first();
@@ -38,31 +33,23 @@ final class AuthenticationAction implements IAuthentification
         $user->save();
         return BaseResponse::success('Compte validé avec succès.');
     }
-    /**
-     * Envoie un email de réinitialisation de mot de passe
-     * @param string $email
-     * @return array
-     */
+
     public function forgotPassword(string $email): array
     {
         $user = User::where('email', $email)->first();
         if (!$user) {
             return BaseResponse::validationError('Aucun utilisateur trouvé avec cet email.');
         }
-        // Utilise le broker par défaut de Laravel
-        $status = \Password::sendResetLink(['email' => $email]);
-        if ($status === \Password::RESET_LINK_SENT) {
+
+        $status = Password::sendResetLink(['email' => $email]);
+
+        if ($status === Password::RESET_LINK_SENT) {
             return BaseResponse::success('Lien de réinitialisation envoyé à votre adresse email.');
-        } else {
-            return BaseResponse::serverError('Impossible d\'envoyer le lien de réinitialisation.');
         }
+
+        return BaseResponse::serverError('Impossible d\'envoyer le lien de réinitialisation.');
     }
 
-    /**
-     * Réinitialise le mot de passe avec le token
-     * @param array $data (email, token, password, password_confirmation)
-     * @return array
-     */
     public function resetPassword(array $data): array
     {
         $validator = Validator::make($data, [
@@ -70,89 +57,95 @@ final class AuthenticationAction implements IAuthentification
             'token' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
         ]);
+
         if ($validator->fails()) {
             return BaseResponse::validationError('Erreur de validation', $validator->errors()->all());
         }
-        $status = \Password::reset(
+
+        $status = Password::reset(
             $data,
             function ($user, $password) {
                 $user->password = Hash::make($password);
                 $user->save();
             }
         );
-        if ($status === \Password::PASSWORD_RESET) {
+
+        if ($status === Password::PASSWORD_RESET) {
             return BaseResponse::success('Mot de passe réinitialisé avec succès.');
-        } else {
-            return BaseResponse::serverError('Le token est invalide ou expiré.');
         }
+
+        return BaseResponse::serverError('Le token est invalide ou expiré.');
     }
-    /**
-     * Handle user login using the provided LoginDto.
-     *
-     * @param LoginDto $loginDto
-     * @return array
-     */
+
     public function login(LoginDto $loginDto): array
     {
         try {
-            // Recherche de l'utilisateur par email
+            if (empty($loginDto->email) || empty($loginDto->password)) {
+                return BaseResponse::validationError(
+                    'Email et mot de passe sont requis.',
+                    $loginDto->toArray()
+                );
+            }
+
             $user = User::where('email', $loginDto->email)->first();
 
             if (!$user) {
-                return BaseResponse::unauthorized(
-                    'Aucun utilisateur trouvé avec cet email.',
-                    $loginDto->toArray()
-                );
+                return BaseResponse::unauthorized('Aucun utilisateur trouvé avec cet email.', $loginDto->toArray());
             }
 
-            // Vérification du mot de passe
             if (!Hash::check($loginDto->password, $user->password)) {
-                return BaseResponse::unauthorized(
-                    'Mot de passe incorrect.',
-                    $loginDto->toArray()
-                );
+                return BaseResponse::unauthorized('Mot de passe incorrect.', $loginDto->toArray());
             }
 
-            // Connexion de l'utilisateur
             Auth::login($user);
 
-            return BaseResponse::success(
-                'Connexion réussie.',
-                $user->toArray()
-            );
+            // Générer un token Sanctum
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return BaseResponse::success('Connexion réussie.', [
+                'user' => $user->toArray(),
+                'access_token' => $token,
+                'token_type' => 'Bearer'
+            ]);
         } catch (\Throwable $th) {
-            return BaseResponse::serverError(
-                'Une erreur est survenue lors de la tentative de connexion.',
-                $loginDto->toArray()
-            );
+            \Log::error('Login error: ' . $th->getMessage());
+
+            return BaseResponse::serverError('Une erreur est survenue lors de la connexion.', ['error' => $th->getMessage()]);
         }
     }
 
-    /**
-     * Handle user registration.
-     *
-     * @param array $data
-     * @return array
-     */
     public function register(RegisterDto $registerDto): array
     {
         try {
-            // Vérifier si l'email existe déjà
-            if (User::where('email', $registerDto->email)->exists()) {
-                return BaseResponse::validationError('Cet email est déjà utilisé.', ['email' => ['Email déjà pris']]);
+            $validator = Validator::make($registerDto->toArray(), [
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|string|min:8',
+            ]);
+
+            if ($validator->fails()) {
+                return BaseResponse::validationError('Erreur de validation', $validator->errors()->all());
             }
 
-            // Créer un nouvel utilisateur
-            $user = User::create($registerDto->toArray());
+            $user = User::create([
+                'name' => $registerDto->nom,
+                'email' => $registerDto->email,
+                'password' => Hash::make($registerDto->password),
+                'is_validated' => true // ou false si tu veux validation email
+            ]);
 
-            return BaseResponse::created('Utilisateur créé avec succès.', ['user' => $user->toArray()]);
+            // Générer un token Sanctum
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return BaseResponse::created('Utilisateur créé avec succès.', [
+                'user' => $user->toArray(),
+                'access_token' => $token,
+                'token_type' => 'Bearer'
+            ]);
         } catch (\Exception $e) {
-            // Log l'erreur si besoin
             \Log::error('Erreur lors de l\'enregistrement : ' . $e->getMessage());
 
             return BaseResponse::serverError('Une erreur est survenue lors de l\'enregistrement.');
         }
     }
-
-
 }

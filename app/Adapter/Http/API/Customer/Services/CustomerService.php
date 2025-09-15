@@ -37,83 +37,11 @@ final class CustomerService
     // ---------------------------
     // PANIER
     // ---------------------------
-
-    public function addToCart(Request $request, bool $is_api = false): array
-    {
-        try {
-            if ($error = $this->validate($request, [
-                'user_id'    => 'required|integer|exists:users,id',
-                'product_id' => 'required|integer|exists:products,id',
-                'quantity'   => 'nullable|integer|min:1',
-            ])) return $error;
-
-            $payload = AddToCartDto::fromRequest($request);
-            $this->actions->addToCart($payload);
-
-            $responsePayload = $payload->toArray();
-            if ($is_api) $responsePayload['message'] = 'Produit ajouté au panier (API)';
-
-            return BaseResponse::result($responsePayload, 200, 'Produit ajouté au panier avec succès !');
-        } catch (\Throwable $th) {
-            return BaseResponse::result([], 500, "Erreur serveur: " . $th->getMessage());
-        }
-    }
-
-    public function removeFromCart(Request $request, bool $is_api = false): array
-    {
-        try {
-            if ($error = $this->validate($request, [
-                'user_id'    => 'required|integer|exists:users,id',
-                'product_id' => 'required|integer|exists:products,id',
-            ])) return $error;
-
-            $payload = AddToCartDto::fromRequest($request);
-            $this->actions->removeFromCart($payload->user_id, $payload->product_id);
-
-            $responsePayload = $payload->toArray();
-            if ($is_api) $responsePayload['message'] = 'Produit retiré du panier (API)';
-
-            return BaseResponse::result($responsePayload, 200, 'Produit retiré du panier avec succès !');
-        } catch (\Throwable $th) {
-            return BaseResponse::result([], 500, "Erreur serveur: " . $th->getMessage());
-        }
-    }
-
-    public function updateCartQuantity(Request $request): array
-    {
-        try {
-            if ($error = $this->validate($request, [
-                'user_id'    => 'required|integer|exists:users,id',
-                'product_id' => 'required|integer|exists:products,id',
-                'quantity'   => 'required|integer|min:1',
-            ])) return $error;
-
-            $this->actions->updateCartQuantity(
-                $request->user_id,
-                $request->product_id,
-                $request->quantity
-            );
-
-            return BaseResponse::result([], 200, 'Quantité mise à jour avec succès !');
-        } catch (\Throwable $th) {
-            return BaseResponse::result([], 500, "Erreur serveur: " . $th->getMessage());
-        }
-    }
-
-    public function getCart(int $userId): array
-    {
-        try {
-            $cartItems = $this->actions->getCart($userId);
-            return BaseResponse::result($cartItems, 200, 'Panier récupéré avec succès');
-        } catch (\Throwable $th) {
-            return BaseResponse::result([], 500, "Erreur serveur: " . $th->getMessage());
-        }
-    }
+    
 
     // ---------------------------
     // FAVORIS
     // ---------------------------
-
     public function addToFavorites(Request $request, bool $is_api = false): array
     {
         try {
@@ -126,6 +54,8 @@ final class CustomerService
             $this->actions->addToFavorites($payload);
 
             $responsePayload = $payload->toArray();
+            $responsePayload['favori'] = true; // Toujours true après ajout
+
             if ($is_api) $responsePayload['message'] = 'Produit ajouté aux favoris (API)';
 
             return BaseResponse::result($responsePayload, 200, 'Produit ajouté aux favoris avec succès !');
@@ -146,6 +76,8 @@ final class CustomerService
             $this->actions->removeFromFavorites($payload->user_id, $payload->product_id);
 
             $responsePayload = $payload->toArray();
+            $responsePayload['favori'] = false; // Toujours false après suppression
+
             if ($is_api) $responsePayload['message'] = 'Produit retiré des favoris (API)';
 
             return BaseResponse::result($responsePayload, 200, 'Produit retiré des favoris avec succès !');
@@ -158,9 +90,33 @@ final class CustomerService
     {
         try {
             $favorites = $this->actions->getFavorites($userId);
-            return BaseResponse::result($favorites, 200, 'Favoris récupérés avec succès');
+
+            // S'assurer que chaque produit a favori = true
+            $favoritesArray = array_map(function($product) {
+                $product['favori'] = true;
+                return $product;
+            }, $favorites);
+
+            return BaseResponse::result($favoritesArray, 200, 'Favoris récupérés avec succès');
         } catch (\Throwable $th) {
             return BaseResponse::result([], 500, "Erreur serveur: " . $th->getMessage());
         }
     }
+    public function toggleFavorite(int $userId, int $productId): array
+{
+    $user = \App\Models\User::find($userId);
+    if (!$user) {
+        return ['code' => 404, 'message' => 'Utilisateur non trouvé', 'data' => []];
+    }
+
+    // Vérifie si déjà favori
+    if ($user->favorites()->where('product_id', $productId)->exists()) {
+        $user->favorites()->detach($productId);
+        return ['code' => 200, 'message' => 'Retiré des favoris', 'data' => []];
+    } else {
+        $user->favorites()->attach($productId);
+        return ['code' => 200, 'message' => 'Ajouté aux favoris', 'data' => []];
+    }
+}
+
 }
