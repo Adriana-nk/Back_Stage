@@ -5,8 +5,8 @@
 @section('content')
 <div class="container">
     <h1>Modifier le produit : {{ $product->nom }}</h1>
-    <form action="{{ route('admin.products.update', $product) }}" method="POST">
-        @csrf
+<form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
+      @csrf
         @method('PUT')
 
         <div class="mb-3">
@@ -41,10 +41,19 @@
             <input type="number" class="form-control" id="stock" name="stock" value="{{ old('stock', $product->stock) }}" required>
         </div>
 
-        <div class="mb-3">
-            <label for="image_url" class="form-label">URL de l'image</label>
-            <input type="url" class="form-control" id="image_url" name="image_url" value="{{ old('image_url', $product->image_url) }}">
-        </div>
+         <div class="mb-3">
+        <label for="image" class="form-label">Image du produit</label>
+        <input type="file" class="form-control" id="image" name="image" accept="image/*" onchange="previewImage(event)">
+        
+        @if($product->image_url)
+            <img id="preview" src="{{ asset('storage/'.$product->image_url) }}" 
+                 alt="{{ $product->nom }}" 
+                 style="max-height:120px;margin-top:10px;">
+        @else
+            <img id="preview" src="#" alt="Aperçu" style="display:none;max-height:120px;margin-top:10px;">
+        @endif
+    </div>
+
 
         <div class="mb-3 form-check">
             <input type="checkbox" class="form-check-input" id="favori" name="favori" value="1" {{ $product->favori ? 'checked' : '' }}>
@@ -53,5 +62,12 @@
 
         <button type="submit" class="btn btn-primary">Mettre à jour</button>
     </form>
+    <script>
+function previewImage(event) {
+    const preview = document.getElementById('preview');
+    preview.src = URL.createObjectURL(event.target.files[0]);
+    preview.style.display = 'block';
+}
+</script>
 </div>
 @endsection

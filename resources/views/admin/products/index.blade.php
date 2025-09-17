@@ -30,8 +30,9 @@
                         <td>{{ $product->id }}</td>
                         <td>
                             @if($product->image_url)
-                                <img src="{{ $product->image_url }}" alt="{{ $product->nom }}" style="height:50px;">
-                            @else
+               <img src="{{ asset('storage/' . $product->image_url) }}" alt="{{ $product->nom }}" style="height:50px;">
+
+  @else
                                 N/A
                             @endif
                         </td>

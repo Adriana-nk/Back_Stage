@@ -48,39 +48,44 @@ class ProductController extends Controller
 
         $products = $query->get();
 
-        $productsArray = $products->map(function($p) {
-            $dto = ProductDto::fromArray($p->toArray());
-            return [
-                'id' => $p->id,
-                'nom' => $dto->nom,
-                'categorie' => $dto->categorie ?? 'Autre',
-                'description' => $dto->description ?? '',
-                'price' => $dto->price ?? 0,
-                'stock' => $dto->stock ?? 0,
-                'favori' => $dto->favori ?? false,
-                'image_url' => $dto->image_url ?? 'assets/img/default.png'
-            ];
-        })->toArray();
+  $productsArray = $products->map(function($p) {
+    $dto = ProductDto::fromArray($p->toArray());
+    return [
+        'id' => $p->id,
+        'nom' => $dto->nom,
+        'categorie' => $dto->categorie ?? 'Autre',
+        'description' => $dto->description ?? '',
+        'prix' => $dto->prix ?? 0,
+        'stock' => $dto->stock ?? 0,
+        'favori' => $dto->favori ?? false,
+        'image_url' => $p->image_url 
+            ? asset('storage/' . $p->image_url) 
+            : asset('assets/img/default.png'), // fallback image
+    ];
+})->toArray();
+
 
         return response()->json(BaseResponse::success("Produits récupérés avec succès", $productsArray));
     }
 
-    public function store(Request $request)
-    {
-        $dto = ProductDto::fromRequest($request);
+public function store(Request $request)
+{
+    $dto = ProductDto::fromRequest($request);
 
-        $product = Product::create([
-            'nom' => $dto->nom,
-            'categorie' => $dto->categorie,
-            'description' => $dto->description,
-            'prix' => $dto->prix,
-            'stock' => $dto->stock,
-            'image_url' => $dto->image_url,
-            'favori' => $dto->favori ?? false,
-        ]);
+    $product = Product::create([
+        'nom' => $dto->nom,
+        'categorie' => $dto->categorie,
+        'description' => $dto->description,
+        'prix' => $dto->prix,
+        'stock' => $dto->stock,
+        'image_url' => $dto->image_url, // chemin généré par ProductDto::fromRequest()
+        'favori' => $dto->favori ?? false,
+    ]);
 
-        return response()->json(BaseResponse::created("Produit ajouté avec succès", $product->toArray()));
-    }
+    return redirect()->route('admin.products.index')
+        ->with('success', 'Produit ajouté avec succès');
+}
+
 
     public function show($id)
     {
@@ -93,28 +98,29 @@ class ProductController extends Controller
         return response()->json(BaseResponse::success("Produit récupéré avec succès", $product->toArray()));
     }
 
-    public function update(Request $request, $id)
-    {
-        $product = Product::find($id);
 
-        if (!$product) {
-            return response()->json(BaseResponse::validationError("Produit introuvable"));
-        }
-
-        $dto = ProductDto::fromRequest($request);
-
-        $product->update([
-            'nom' => $dto->nom ?? $product->nom,
-            'categorie' => $dto->categorie ?? $product->categorie,
-            'description' => $dto->description ?? $product->description,
-            'price' => $dto->prix ?? $product->prix,
-            'stock' => $dto->stock ?? $product->stock,
-            'image_url' => $dto->image_url ?? $product->image_url,
-            'favori' => $dto->favori ?? $product->favori,
-        ]);
-
-        return response()->json(BaseResponse::success("Produit mis à jour avec succès", $product->toArray()));
+public function update(Request $request, $id)
+{
+    $product = Product::find($id);
+    if (!$product) {
+        return redirect()->route('admin.products.index')->with('error', 'Produit introuvable');
     }
+
+    $dto = ProductDto::fromRequest($request);
+
+    $product->update([
+        'nom' => $dto->nom ?? $product->nom,
+        'categorie' => $dto->categorie ?? $product->categorie,
+        'description' => $dto->description ?? $product->description,
+        'prix' => $dto->prix ?? $product->prix,
+        'stock' => $dto->stock ?? $product->stock,
+        'image_url' => $dto->image_url ?? $product->image_url,
+        'favori' => $dto->favori ?? $product->favori,
+    ]);
+
+    return redirect()->route('admin.products.index')
+        ->with('success', 'Produit mis à jour avec succès');
+}
 
     public function destroy($id)
     {

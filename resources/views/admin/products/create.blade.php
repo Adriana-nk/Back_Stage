@@ -5,8 +5,8 @@
 @section('content')
 <div class="container">
     <h1>Créer un nouveau produit</h1>
-    <form action="{{ route('admin.products.store') }}" method="POST">
-        @csrf
+<form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
+     @csrf
 
         <div class="mb-3">
             <label for="nom" class="form-label">Nom</label>
@@ -40,17 +40,28 @@
             <input type="number" class="form-control" id="stock" name="stock" required>
         </div>
 
-        <div class="mb-3">
-            <label for="image_url" class="form-label">URL de l'image</label>
-            <input type="url" class="form-control" id="image_url" name="image_url">
-        </div>
+   
+    <div class="mb-3">
+        <label for="image" class="form-label">Image du produit</label>
+        <input type="file" class="form-control" id="image" name="image" accept="image/*" onchange="previewImage(event)">
+        <img id="preview" src="#" alt="Aperçu" style="display:none;max-height:120px;margin-top:10px;">
+    </div>
 
-        <div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" id="favori" name="favori" value="1">
-            <label class="form-check-label" for="favori">Favori</label>
-        </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="favori" name="favori" value="1">
+        <label class="form-check-label" for="favori">Favori</label>
+    </div>
 
         <button type="submit" class="btn btn-primary">Créer</button>
     </form>
 </div>
+<script>
+function previewImage(event) {
+    const preview = document.getElementById('preview');
+    preview.src = URL.createObjectURL(event.target.files[0]);
+    preview.style.display = 'block';
+}
+</script>
+
 @endsection
+ 

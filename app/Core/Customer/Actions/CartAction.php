@@ -94,19 +94,34 @@ final class CartAction
     }
 
     /**
-     * Récupérer le panier d'un utilisateur
+     * Récupérer le panier d'un utilisateur avec les informations produit
      */
-    public function getCart(int $userId): array
-    {
-        try {
-            $cartItems = Cart::with('product')
-                ->where('user_id', $userId)
-                ->get();
+public function getCart(int $userId): array
+{
+    try {
+        $cartItems = Cart::with('product')
+            ->where('user_id', $userId)
+            ->get();
 
-            return BaseResponse::success('Panier récupéré avec succès.', $cartItems->toArray());
-        } catch (\Exception $e) {
-            Log::error('Erreur lors de la récupération du panier : ' . $e->getMessage());
-            return BaseResponse::serverError('Une erreur est survenue lors de la récupération du panier.');
-        }
+        // Transformer les données pour le frontend
+        $cartArray = $cartItems->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'user_id' => $item->user_id,
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity,
+                'product_name' => $item->product->name ?? '',
+                'prix' => $item->product->prix ?? 0,
+                'unit' => $item->product->unit ?? '',
+                'image' => $item->product->image ?? '',
+            ];
+        })->toArray();
+
+        return BaseResponse::success('Panier récupéré avec succès.', $cartArray);
+    } catch (\Exception $e) {
+        Log::error('Erreur lors de la récupération du panier : ' . $e->getMessage());
+        return BaseResponse::serverError('Une erreur est survenue lors de la récupération du panier.');
     }
+}
+
 }

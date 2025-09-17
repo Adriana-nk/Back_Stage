@@ -38,34 +38,47 @@ final class ProductAction
     /**
      * Ajouter un produit
      */
-    public static function createProduct(ProductDto $productDto): array
-    {
-        try {
-            $product = Product::create($productDto->toArray());
-            return BaseResponse::created("Produit ajouté avec succès", $product->toArray());
-        } catch (\Throwable $th) {
-            return BaseResponse::serverError("Erreur lors de l'ajout du produit", ['exception' => $th->getMessage()]);
-        }
+public static function createProduct(ProductDto $productDto): array
+{
+    try {
+        $product = Product::create($productDto->toArray());
+
+        return BaseResponse::created("Produit ajouté avec succès", $product->toArray());
+    } catch (\Throwable $th) {
+        return BaseResponse::serverError("Erreur lors de l'ajout du produit", ['exception' => $th->getMessage()]);
     }
+}
 
     /**
      * Mettre à jour un produit
      */
-    public static function updateProduct(int $id, ProductDto $productDto): array
-    {
-        try {
-            $product = Product::find($id);
-            if (!$product) {
-                return BaseResponse::validationError("Produit introuvable");
-            }
-
-            $product->update($productDto->toArray());
-            return BaseResponse::success("Produit mis à jour avec succès", $product->toArray());
-
-        } catch (\Throwable $th) {
-            return BaseResponse::serverError("Erreur lors de la mise à jour du produit", ['exception' => $th->getMessage()]);
+public static function updateProduct(int $id, ProductDto $productDto): array
+{
+    try {
+        $product = Product::find($id);
+        if (!$product) {
+            return BaseResponse::validationError("Produit introuvable");
         }
+
+        $data = $productDto->toArray();
+
+        // Si une nouvelle image est envoyée, on remplace
+        if ($productDto->image_url !== null) {
+            $data['image_url'] = $productDto->image_url;
+        } else {
+            // On garde l'ancienne si rien de nouveau
+            unset($data['image_url']);
+        }
+
+        $product->update($data);
+
+        return BaseResponse::success("Produit mis à jour avec succès", $product->toArray());
+
+    } catch (\Throwable $th) {
+        return BaseResponse::serverError("Erreur lors de la mise à jour du produit", ['exception' => $th->getMessage()]);
     }
+}
+
 
     /**
      * Supprimer un produit

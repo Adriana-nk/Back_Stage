@@ -18,18 +18,26 @@ final readonly class ProductDto implements IDto
         public bool $favori = false
     ) {}
 
-    public static function fromRequest(Request $request): self
+public static function fromRequest(Request $request): self
 {
+    $imagePath = null;
+
+    if ($request->hasFile('image') && $request->file('image')->isValid()) {
+        // Stockage dans "storage/app/public/products"
+        $imagePath = $request->file('image')->store('products', 'public');
+    }
+
     return new self(
         nom: $request['nom'] ?? '',
         categorie: $request['categorie'] ?? null,
         description: $request['description'] ?? null,
         prix: isset($request['prix']) ? (float)$request['prix'] : 0,
         stock: isset($request['stock']) ? (int)$request['stock'] : 0,
-        image_url: $request['image_url'] ?? null,
+        image_url: $imagePath ?? ($request['image_url'] ?? null),
         favori: filter_var($request['favori'] ?? false, FILTER_VALIDATE_BOOLEAN)
     );
 }
+
 
 public static function fromArray(array $data): self
 {

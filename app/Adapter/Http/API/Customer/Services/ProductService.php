@@ -6,7 +6,7 @@ namespace App\Adapter\Http\API\Customer\Services;
 
 use App\Core\Customer\Dto\ProductDto;
 use App\Core\Customer\Actions\ProductAction;
-use App\Adapter\Http\API\shared\BaseResponse;
+use App\Adapter\Http\API\Shared\BaseResponse;
 use App\Models\Favorite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -96,6 +96,7 @@ final class ProductService
             return BaseResponse::error('Une erreur est survenue pendant la récupération des produits', []);
         }
     }
+
     public static function toggleFavorite(Request $request): array
     {
         try {
@@ -175,5 +176,4 @@ final class ProductService
             );
         }
     }
-
 }
